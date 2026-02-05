@@ -15,5 +15,6 @@ def f(x):
     -------
     float
         Output value.
+        new change
     """
     pass
