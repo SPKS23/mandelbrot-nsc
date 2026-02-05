@@ -1,14 +1,12 @@
 """ Mandelbrot Set 
-Generator Author: [Your Name] 
+Generator Author: Søren Peter Krag Sørensen 
 Course: Numerical Scientific Computing 2026 
 """
 import cmath
 import time 
 import numpy as np
+import matplotlib.pyplot as plt
 
-x = np.linspace(-2, 1, 1000)
-y = np.linspace(-1.5, 1.5, 1000)
-complex_grid = np.array([[complex(xi, yi) for xi in x] for yi in y])
 def f(x): 
     """
     Example function.
@@ -35,5 +33,16 @@ def mandelbrot_point(c, max_iter):
         z = z*z + c
     return max_iter
 
-print(complex_grid)
-print("osten9000")
+def mandelbrot_set(xmin, xmax, ymin, ymax, width, height, max_iter):
+    r1 = np.linspace(xmin, xmax, width)
+    r2 = np.linspace(ymin, ymax, height)
+    return (r1, r2, np.array([[mandelbrot_point(complex(r, i), max_iter) for r in r1] for i in r2]))
+
+if __name__ == "__main__":
+    start_time = time.time()
+    xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
+    width, height = 1024, 1024
+    max_iter = 100
+    r1, r2, mandelbrot_image = mandelbrot_set(xmin, xmax, ymin, ymax, width, height, max_iter)
+    end_time = time.time()
+    print(f"Tid for kode: {end_time - start_time} sekunder")
