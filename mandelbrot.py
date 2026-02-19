@@ -44,10 +44,11 @@ if __name__ == "__main__":
     width, height = 1024, 1024
     max_iter = 100
     r1, r2, mandelbrot_image = mandelbrot_set(xmin, xmax, ymin, ymax, width, height, max_iter)
+    end_time = time.time()
+    print(f"Tid for kode: {end_time - start_time} sekunder")
     plt.imshow(mandelbrot_image, extent=(xmin, xmax, ymin, ymax))
     plt.xlabel('Re')
     plt.ylabel('Im')
     plt.title('Mandelbrot Set')
     plt.show()
-    end_time = time.time()
-    print(f"Tid for kode: {end_time - start_time} sekunder")
+    
