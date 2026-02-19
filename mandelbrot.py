@@ -46,16 +46,16 @@ def mandelbrot_set_numpy(xmin, xmax, ymin, ymax, width, height, max_iter):
         mask = np.abs(Z) <= 2
         Z[mask] = Z[mask] ** 2 + C[mask]
         M[mask] += 1
-    return x, y, M
+    return M
 
 
 
 
 if __name__ == "__main__":
     """New code for testing the mandelbrot set generation and plotting."""
-    x, y, M = mandelbrot_set_numpy(-2.0, 1.0, -1.5, 1.5, 1024, 1024,100)
+    M = mandelbrot_set_numpy(-2.0, 1.0, -1.5, 1.5, 1024, 1024,100)
     
-
+    benchmark(mandelbrot_set_numpy, -2.0, 1.0, -1.5, 1.5, 1024, 1024,100)
     """ Old code for testing the mandelbrot set generation and plotting. """
     xmin, xmax, ymin, ymax = -2.0, 1.0, -1.5, 1.5
     width, height = 1024, 1024
