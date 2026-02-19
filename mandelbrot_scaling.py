@@ -31,6 +31,6 @@ def mandelbrot_set_numpy(xmin, xmax, ymin, ymax, width, height, max_iter):
 
 if __name__ == "__main__":
     """New code for testing the mandelbrot set generation and plotting."""
-    for n in range(6):
+    for n in range(5):
         print(f"Run {256*2**n}:")
         benchmark(mandelbrot_set_numpy, -2.0, 1.0, -1.5, 1.5, 256*2**n, 256*2**n,100)
