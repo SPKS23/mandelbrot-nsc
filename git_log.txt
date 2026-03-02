@@ -1,0 +1,90 @@
+2026-03-02 ff467eb Numba typed plots
+
+ Numba.py                 |  18 ++++++++++++++++--
+ precision_comparison.png | Bin 0 -> 112014 bytes
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+2026-03-02 aa7a7c9 dtype for Numba
+
+ Numba.py | 48 ++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 36 insertions(+), 12 deletions(-)
+2026-03-02 5b2f328 changes
+
+ Numba.py                               |   8 ++++++++
+ __pycache__/mandelbrot.cpython-311.pyc | Bin 4614 -> 4190 bytes
+ mandelbrot.py                          |   4 ++--
+ 3 files changed, 10 insertions(+), 2 deletions(-)
+2026-02-26 8f25393 Numba and Profiling
+
+ .vscode/settings.json                  |   5 +++
+ Numba.py                               |  64 +++++++++++++++++++++++++++++++++
+ __pycache__/mandelbrot.cpython-311.pyc | Bin 0 -> 4614 bytes
+ cProfile_test.py                       |  10 ++++++
+ mandelbrot.py                          |   5 +--
+ mandelbrot.py.lprof                    | Bin 0 -> 424 bytes
+ 6 files changed, 80 insertions(+), 4 deletions(-)
+2026-02-19 3bdff4a Milestone 4
+
+ mandelbrot_scaling.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+2026-02-19 fc624f3 Milestone 4
+
+ mandelbrot_scaling.py | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+2026-02-19 432f668 Milestone 3
+
+ Memory_Access_Patterns.py | 31 +++++++++++++++++++++++++++++++
+ mandelbrot.py             |  6 +++---
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+2026-02-19 952daec Validation
+
+ mandelbrot.py | 31 +++++++++++++++++--------------
+ 1 file changed, 17 insertions(+), 14 deletions(-)
+2026-02-19 80509ae Milestone 2
+
+ mandelbrot.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+2026-02-19 96b3402 Milestone 1
+
+ mandelbrot.py | 49 ++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 30 insertions(+), 19 deletions(-)
+2026-02-19 e1d6fd3 change of timing place
+
+ mandelbrot.py | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+2026-02-19 c5f8dc2 transpose
+
+ mandelbrot.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+2026-02-19 53dc1d2 revert
+
+ mandelbrot.py | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+2026-02-19 beedac3 Uden numpy
+
+ mandelbrot.py | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+2026-02-05 77ce907 Mandelbrot update
+
+ mandelbrot.py | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+2026-02-05 c5321ed Test 123
+
+ mandelbrot.py | 7 +++++++
+ 1 file changed, 7 insertions(+)
+2026-02-05 7d6196a Point mandelbrot
+
+ mandelbrot.py | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+2026-02-05 8a5b652 New
+
+ mandelbrot.py | 1 +
+ 1 file changed, 1 insertion(+)
+2026-02-05 a66ed1c Add mandelbrot skeleton
+
+ mandelbrot.py   | 19 +++++++++++++++++++
+ test_install.py |  0
+ 2 files changed, 19 insertions(+)
+2026-02-05 8713d4a Add pyhon es
+
+ enviroment.yml | Bin 0 -> 1460 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
