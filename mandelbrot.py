@@ -28,12 +28,12 @@ def mandelbrot_point(c, max_iter):
         z = z*z + c
     return max_iter
 
-def mandelbrot_set(xmin, xmax, ymin, ymax, width, height, max_iter):
+def mandelbrot_set(xmin, xmax, ymin, ymax, width, height, max_iter=100):
     r1 = np.linspace(xmin, xmax, width)
     r2 = np.linspace(ymin, ymax, height)
     return (r1, r2, [[mandelbrot_point(complex(r, i), max_iter) for r in r1] for i in r2])
 
-def mandelbrot_set_numpy(xmin, xmax, ymin, ymax, width, height, max_iter):
+def mandelbrot_set_numpy(xmin, xmax, ymin, ymax, width, height, max_iter=100):
     x = np.linspace(xmin, xmax, width)
     y = np.linspace(ymin, ymax, height)
 

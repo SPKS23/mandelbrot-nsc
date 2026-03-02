@@ -1,6 +1,7 @@
 from numba import njit
 import numpy as np
 import time, statistics
+from mandelbrot import mandelbrot_set, mandelbrot_set_numpy
 
 def bench(fn, *args, runs=5):
     fn(*args)  # warmup
@@ -58,7 +59,14 @@ _ = mandelbrot_naive_numba(-2, 1, -1.5, 1.5, 64, 64)
 
 t_hybrid = bench(mandelbrot_hybrid, -2, 1, -1.5, 1.5, 1024, 1024)
 t_full = bench(mandelbrot_naive_numba, -2, 1, -1.5, 1.5, 1024, 1024)
+t_set = bench(mandelbrot_set, -2, 1, -1.5, 1.5, 1024, 1024)
+t_numpy = bench(mandelbrot_set_numpy, -2, 1, -1.5, 1.5, 1024, 1024)
+
+
 
 print(f"Hybrid: {t_hybrid:.3f}s")
 print(f"Fully compiled: {t_full:.3f}s")
+print(f"Original Python: {t_set:.3f}s")
+print(f"NumPy: {t_numpy:.3f}s")
 print(f"Ratio: {t_hybrid/t_full:.1f}x")
+
