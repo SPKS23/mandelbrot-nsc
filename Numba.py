@@ -53,20 +53,44 @@ def mandelbrot_naive_numba(xmin, xmax, ymin, ymax, width, height, max_iter=100):
     return result
 
 
-# Warm up (triggers JIT compilation -- exclude from timing)
-_ = mandelbrot_hybrid(-2, 1, -1.5, 1.5, 64, 64)
-_ = mandelbrot_naive_numba(-2, 1, -1.5, 1.5, 64, 64)
+def mandelbrot_typed_numba(xmin, xmax, ymin, ymax, width, height, max_iter=100,dtype=np.float64):
+    x = np.linspace(xmin, xmax, width).astype(dtype)
+    y = np.linspace(ymin, ymax, height).astype(dtype)
+    result = np.zeros((height, width), dtype=np.int32)
+    for i in range(height):
+        for j in range(width):
+            c = x[j] + 1j * y[i]
+            z = 0j
+            n = 0
+            while n < max_iter and \
+                z.real*z.real+z.imag*z.imag <= 4.0:
+                z = z*z + c
+                n += 1
+            result[i, j] = n
+    return result
 
-t_hybrid = bench(mandelbrot_hybrid, -2, 1, -1.5, 1.5, 1024, 1024)
-t_full = bench(mandelbrot_naive_numba, -2, 1, -1.5, 1.5, 1024, 1024)
-t_set = bench(mandelbrot_set, -2, 1, -1.5, 1.5, 1024, 1024)
-t_numpy = bench(mandelbrot_set_numpy, -2, 1, -1.5, 1.5, 1024, 1024)
+
+### Test of milestone 3 ###
+# # Warm up (triggers JIT compilation -- exclude from timing)
+# _ = mandelbrot_hybrid(-2, 1, -1.5, 1.5, 64, 64)
+# _ = mandelbrot_naive_numba(-2, 1, -1.5, 1.5, 64, 64)
+
+# t_hybrid = bench(mandelbrot_hybrid, -2, 1, -1.5, 1.5, 1024, 1024)
+# t_full = bench(mandelbrot_naive_numba, -2, 1, -1.5, 1.5, 1024, 1024)
+# t_set = bench(mandelbrot_set, -2, 1, -1.5, 1.5, 1024, 1024)
+# t_numpy = bench(mandelbrot_set_numpy, -2, 1, -1.5, 1.5, 1024, 1024)
 
 
 
-print(f"Hybrid: {t_hybrid:.3f}s")
-print(f"Fully compiled: {t_full:.3f}s")
-print(f"Original Python: {t_set:.3f}s")
-print(f"NumPy: {t_numpy:.3f}s")
-print(f"Ratio: {t_hybrid/t_full:.1f}x")
+# print(f"Hybrid: {t_hybrid:.3f}s")
+# print(f"Fully compiled: {t_full:.3f}s")
+# print(f"Original Python: {t_set:.3f}s")
+# print(f"NumPy: {t_numpy:.3f}s")
+# print(f"Ratio: {t_hybrid/t_full:.1f}x")
+
+for type  in [np.float64, np.float32,np.float16]:
+    mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=type)
+    t0 = time.perf_counter()
+    mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=type)
+    print(f"Time for dtype={type.__name__}: {time.perf_counter() - t0:.3f}s")
 
