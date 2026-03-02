@@ -2,6 +2,7 @@ from numba import njit
 import numpy as np
 import time, statistics
 from mandelbrot import mandelbrot_set, mandelbrot_set_numpy
+import matplotlib.pyplot as plt
 
 def bench(fn, *args, runs=5):
     fn(*args)  # warmup
@@ -52,7 +53,7 @@ def mandelbrot_naive_numba(xmin, xmax, ymin, ymax, width, height, max_iter=100):
             result[i, j] = n
     return result
 
-
+@njit
 def mandelbrot_typed_numba(xmin, xmax, ymin, ymax, width, height, max_iter=100,dtype=np.float64):
     x = np.linspace(xmin, xmax, width).astype(dtype)
     y = np.linspace(ymin, ymax, height).astype(dtype)
@@ -88,9 +89,22 @@ def mandelbrot_typed_numba(xmin, xmax, ymin, ymax, width, height, max_iter=100,d
 # print(f"NumPy: {t_numpy:.3f}s")
 # print(f"Ratio: {t_hybrid/t_full:.1f}x")
 
-for type  in [np.float64, np.float32,np.float16]:
+for type  in [np.float64, np.float32]:
     mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=type)
     t0 = time.perf_counter()
     mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=type)
     print(f"Time for dtype={type.__name__}: {time.perf_counter() - t0:.3f}s")
 
+# r16 = mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=np.float16)
+# r32 = mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=np.float32)
+# r64 = mandelbrot_typed_numba(-2, 1, -1.5, 1.5, 1024, 1024, dtype=np.float64)
+
+# fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+# for ax, result, title in zip(axes, [r16, r32, r64],
+#                              ['float16', 'float32', 'float64 (ref)']):
+#     ax.imshow(result, cmap='hot')
+#     ax.set_title(title); ax.axis('off')
+# plt.savefig('precision_comparison.png', dpi=150)
+
+# print(f"Max diff float32 vs float64: {np.abs(r32-r64).max()}")
+# print(f"Max diff float16 vs float64: {np.abs(r16-r64).max()}")
