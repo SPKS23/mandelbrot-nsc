@@ -1,172 +1,161 @@
-
-# mandelbrot_parallel.py (Tasks 1-3 are one continuous script)
 import numpy as np
 from numba import njit
-from multiprocessing import Pool
-import time, os, statistics, matplotlib.pyplot as plt
+import time, statistics
+import matplotlib.pyplot as plt
 from pathlib import Path
 from dask import delayed
-from dask.distributed import Client, LocalCluster
-import dask, numpy as np, time, statistics
+import dask
+from dask.distributed import Client
+import multiprocessing
+
+multiprocessing.set_start_method("spawn", force=True)
+
 
 @njit(cache=True)
 def mandelbrot_pixel(c_real, c_imag, max_iter):
-    z_real = z_imag = 0.0
+    zr = 0.0
+    zi = 0.0
     for i in range(max_iter):
-        zr2 = z_real*z_real
-        zi2 = z_imag*z_imag
-        if zr2 + zi2 > 4.0: return i
-        z_imag = 2.0*z_real*z_imag + c_imag
-        z_real = zr2 - zi2 + c_real
+        zr2 = zr * zr
+        zi2 = zi * zi
+        if zr2 + zi2 > 4.0:
+            return i
+        zi = 2.0 * zr * zi + c_imag
+        zr = zr2 - zi2 + c_real
     return max_iter
 
+
 @njit(cache=True)
-def mandelbrot_chunk(row_start, row_end, N,
-                    x_min, x_max, y_min, y_max, max_iter):
+def mandelbrot_chunk(row_start, row_end, N, xmin, xmax, ymin, ymax, max_iter):
     out = np.empty((row_end - row_start, N), dtype=np.int32)
-    dx = (x_max - x_min) / N
-    dy = (y_max - y_min) / N
+    dx = (xmax - xmin) / N
+    dy = (ymax - ymin) / N
+
     for r in range(row_end - row_start):
-        c_imag = y_min + (r + row_start) * dy
+        c_imag = ymin + (r + row_start) * dy
         for col in range(N):
-            out[r, col] = mandelbrot_pixel(x_min + col*dx, c_imag, max_iter)
+            c_real = xmin + col * dx
+            out[r, col] = mandelbrot_pixel(c_real, c_imag, max_iter)
+
     return out
 
-def mandelbrot_serial(N, x_min, x_max, y_min, y_max, max_iter=100):
-    return mandelbrot_chunk(0, N, N, x_min, x_max, y_min, y_max, max_iter)
 
-def _worker(args):
-    return mandelbrot_chunk(*args)
+def mandelbrot_serial(N, xmin, xmax, ymin, ymax, max_iter=100):
+    return mandelbrot_chunk(0, N, N, xmin, xmax, ymin, ymax, max_iter)
 
-def mandelbrot_parallel(N, x_min, x_max, y_min, y_max,
-                       max_iter=100, n_workers=4, n_chunks=None, pool=None):
-    if n_chunks is None:
-        n_chunks = n_workers
+
+def mandelbrot_dask(N, xmin, xmax, ymin, ymax, max_iter=100, n_chunks=16):
     chunk_size = max(1, N // n_chunks)
-    chunks, row = [], 0
+    chunks = []
+
+    row = 0
     while row < N:
         row_end = min(row + chunk_size, N)
-        chunks.append((row, row_end, N, x_min, x_max, y_min, y_max, max_iter))
+        chunks.append((row, row_end, N, xmin, xmax, ymin, ymax, max_iter))
         row = row_end
-    if pool is not None:  # caller manages Pool; skip startup + warm-up
-        return np.vstack(pool.map(_worker, chunks))
-    tiny = [(0, 8, 8, x_min, x_max, y_min, y_max, max_iter)]
-    with Pool(processes=n_workers) as p:
-        p.map(_worker, tiny)  # warm-up: load JIT cache in workers
-        parts = p.map(_worker, chunks)
-    return np.vstack(parts)
 
-# mandelbrot_chunk: your @njit(cache=True) function from L04/L05
-def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
-                    max_iter=100, n_chunks=32):
-    chunk_size = max(1, N // n_chunks)
-    tasks, row = [], 0
-    while row < N:
-        row_end = min(row + chunk_size, N)
-        tasks.append(delayed(mandelbrot_chunk)(
-            row, row_end, N, x_min, x_max, y_min, y_max, max_iter))
-        row = row_end
+    tasks = [delayed(mandelbrot_chunk)(*chunk) for chunk in chunks]
     parts = dask.compute(*tasks)
     return np.vstack(parts)
-if __name__ == '__main__':
-    import time
-    import statistics
-    import numpy as np
-    from multiprocessing import Pool
-    from dask.distributed import Client
-    from dask import delayed
 
-    # ----------------------------
-    # CONFIG
-    # ----------------------------
-    N, max_iter = 8192, 100
-    X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
-    n_workers = 12
 
-    # ----------------------------
-    # JIT warm-up
-    # ----------------------------
-    mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)
+def warmup(xmin, xmax, ymin, ymax):
+    mandelbrot_chunk(0, 8, 8, xmin, xmax, ymin, ymax, 10)
 
-    # ----------------------------
+
+if __name__ == "__main__":
+    # =========================
+    # PROBLEM SETUP
+    # =========================
+    N = 4096
+    max_iter = 100
+    xmin, xmax = -2.0, 1.0
+    ymin, ymax = -1.5, 1.5
+
+    # =========================
+    # DASK SETUP
+    # =========================
+    client = Client("tcp://10.92.1.130:8786")
+
+    versions = client.run(lambda: __import__('dask').__version__)
+    print(versions)
+
+    # warm-up ALL workers (Numba JIT)
+    client.run(warmup, xmin, xmax, ymin, ymax)
+
+    # warm-up
+    mandelbrot_serial(N, xmin, xmax, ymin, ymax, max_iter)
+    mandelbrot_dask(N, xmin, xmax, ymin, ymax, max_iter, n_chunks=8)
+
+    # =========================
     # SERIAL BASELINE
-    # ----------------------------
+    # =========================
     times = []
-    for _ in range(3):
+    for _ in range(5):
         t0 = time.perf_counter()
-        mandelbrot_chunk(0, N, N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)
+        mandelbrot_serial(N, xmin, xmax, ymin, ymax, max_iter)
         times.append(time.perf_counter() - t0)
 
     t_serial = statistics.median(times)
-    print(f"Serial: {t_serial:.3f}s")
+    print(f"\nSerial baseline: {t_serial:.3f}s\n")
 
-    # ----------------------------
-    # MULTIPROCESSING SWEEP
-    # ----------------------------
-    tiny = [(0, 8, 8, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)]
+    # =========================
+    # VERIFY CORRECTNESS
+    # =========================
+    result_serial = mandelbrot_serial(N, xmin, xmax, ymin, ymax, max_iter)
+    result_dask = mandelbrot_dask(N, xmin, xmax, ymin, ymax, max_iter, n_chunks=8)
 
-    for mult in [1, 2, 4, 8, 16]:
-        n_chunks = mult * n_workers
+    print("Match:", np.array_equal(result_serial, result_dask))
 
-        with Pool(processes=n_workers) as pool:
-            pool.map(_worker, tiny)  # warm-up
+    # =========================
+    # M2: CHUNK SWEEP
+    # =========================
+    chunk_values = [2, 4, 8, 16, 32, 64, 128, 256]
+    results = []
 
-            times = []
-            for _ in range(3):
-                t0 = time.perf_counter()
-                mandelbrot_parallel(
-                    N, X_MIN, X_MAX, Y_MIN, Y_MAX,
-                    max_iter=max_iter,
-                    n_workers=n_workers,
-                    n_chunks=n_chunks,
-                    pool=pool
-                )
-                times.append(time.perf_counter() - t0)
+    print("\nn_chunks | time (s) | vs1x | Speedup | LIF")
+    print("------------------------------------------------")
 
-        t_par = statistics.median(times)
-        lif = n_workers * t_par / t_serial - 1
+    baseline = None
 
-        print(f"{n_chunks:4d} chunks  {t_par:.3f}s  {t_serial/t_par:.1f}x  LIF={lif:.2f}")
+    for n_chunks in chunk_values:
+        times = []
+        for _ in range(5):
+            t0 = time.perf_counter()
+            mandelbrot_dask(N, xmin, xmax, ymin, ymax, max_iter, n_chunks=n_chunks)
+            times.append(time.perf_counter() - t0)
 
-    # ----------------------------
-    # DASK (FIXED DISTRIBUTED)
-    # ----------------------------
-    client = Client("tcp://10.92.1.228:8786")
-    print(client)
+        t_dask = statistics.median(times)
+        if baseline is None:
+            baseline = t_dask
+        vs1x = t_dask / baseline
+        speedup = t_serial / t_dask
+        lif = 4 * (t_dask / t_serial) - 1
 
-    # safe warm-up on workers
-    client.run(lambda: None)
+        results.append((n_chunks, t_dask, vs1x, speedup, lif))
 
-    def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
-                        max_iter=100, n_chunks=32):
+        print(f"{n_chunks:8d} | {t_dask:8.3f} | {vs1x:6.2f} | {speedup:7.2f}x | {lif:6.2f}")
 
-        chunk_size = max(1, N // n_chunks)
-        tasks = []
-        row = 0
+    # =========================
+    # FIND BEST
+    # =========================
+    best = min(results, key=lambda x: x[1])
+    best_lif = min(results, key=lambda x: x[4])
 
-        while row < N:
-            row_end = min(row + chunk_size, N)
-            tasks.append(delayed(mandelbrot_chunk)(
-                row, row_end, N,
-                x_min, x_max, y_min, y_max,
-                max_iter
-            ))
-            row = row_end
+    print("\nBest result:")
+    print(f"n_chunks_optimal = {best[0]}")
+    print(f"t_min = {best[1]:.3f} s")
+    print(f"speedup = {best[3]:.2f}x")
+    print(f"LIF_min = {best_lif[4]:.2f}")
 
-        futures = client.compute(tasks)
-        parts = client.gather(futures)
-
-        return np.vstack(parts)
-
-    # ----------------------------
-    # DASK BENCHMARK
-    # ----------------------------
-    times = []
-    for _ in range(3):
-        t0 = time.perf_counter()
-        mandelbrot_dask(N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter, n_chunks=32)
-        times.append(time.perf_counter() - t0)
-
-    print(f"Dask distributed (n_chunks=32): {statistics.median(times):.3f}s")
+    # =========================
+    # CLEAN UP
+    # =========================
+    plt.plot(chunk_values, [r[1] for r in results])
+    plt.xscale("log")
+    plt.xlabel("n_chunks")
+    plt.ylabel("Time (s)")
+    plt.savefig("dask_chunk_sweep.png")
+    plt.show()
 
     client.close()
