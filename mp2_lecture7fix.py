@@ -75,7 +75,7 @@ if __name__ == "__main__":
     # =========================
     # DASK SETUP
     # =========================
-    client = Client("tcp://10.92.1.130:8786")
+    client = Client("tcp://10.92.1.228:8786")
 
     versions = client.run(lambda: __import__('dask').__version__)
     print(versions)
