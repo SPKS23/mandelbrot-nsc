@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # Dask local benchmark
     N, max_iter = 1024, 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
-    client = Client(Client("tcp://10.92.1.228:8786"))
+    client = Client("tcp://10.92.1.228:8786")
     client.run(lambda: mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX,  # warm up all workers
                                        Y_MIN, Y_MAX, 10))
     times = []
