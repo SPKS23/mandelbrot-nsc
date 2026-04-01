@@ -65,7 +65,7 @@ def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
         tasks.append(delayed(mandelbrot_chunk)(
             row, row_end, N, x_min, x_max, y_min, y_max, max_iter))
         row = row_end
-    parts = dask.compute(*tasks)
+    parts = client.compute(*tasks)
     return np.vstack(parts)
 
 if __name__ == '__main__':
