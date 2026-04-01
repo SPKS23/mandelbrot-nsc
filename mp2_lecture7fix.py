@@ -1,5 +1,73 @@
 
+# mandelbrot_parallel.py (Tasks 1-3 are one continuous script)
+import numpy as np
+from numba import njit
+from multiprocessing import Pool
+import time, os, statistics, matplotlib.pyplot as plt
+from pathlib import Path
+from dask import delayed
+from dask.distributed import Client, LocalCluster
+import dask, numpy as np, time, statistics
 
+@njit(cache=True)
+def mandelbrot_pixel(c_real, c_imag, max_iter):
+    z_real = z_imag = 0.0
+    for i in range(max_iter):
+        zr2 = z_real*z_real
+        zi2 = z_imag*z_imag
+        if zr2 + zi2 > 4.0: return i
+        z_imag = 2.0*z_real*z_imag + c_imag
+        z_real = zr2 - zi2 + c_real
+    return max_iter
+
+@njit(cache=True)
+def mandelbrot_chunk(row_start, row_end, N,
+                    x_min, x_max, y_min, y_max, max_iter):
+    out = np.empty((row_end - row_start, N), dtype=np.int32)
+    dx = (x_max - x_min) / N
+    dy = (y_max - y_min) / N
+    for r in range(row_end - row_start):
+        c_imag = y_min + (r + row_start) * dy
+        for col in range(N):
+            out[r, col] = mandelbrot_pixel(x_min + col*dx, c_imag, max_iter)
+    return out
+
+def mandelbrot_serial(N, x_min, x_max, y_min, y_max, max_iter=100):
+    return mandelbrot_chunk(0, N, N, x_min, x_max, y_min, y_max, max_iter)
+
+def _worker(args):
+    return mandelbrot_chunk(*args)
+
+def mandelbrot_parallel(N, x_min, x_max, y_min, y_max,
+                       max_iter=100, n_workers=4, n_chunks=None, pool=None):
+    if n_chunks is None:
+        n_chunks = n_workers
+    chunk_size = max(1, N // n_chunks)
+    chunks, row = [], 0
+    while row < N:
+        row_end = min(row + chunk_size, N)
+        chunks.append((row, row_end, N, x_min, x_max, y_min, y_max, max_iter))
+        row = row_end
+    if pool is not None:  # caller manages Pool; skip startup + warm-up
+        return np.vstack(pool.map(_worker, chunks))
+    tiny = [(0, 8, 8, x_min, x_max, y_min, y_max, max_iter)]
+    with Pool(processes=n_workers) as p:
+        p.map(_worker, tiny)  # warm-up: load JIT cache in workers
+        parts = p.map(_worker, chunks)
+    return np.vstack(parts)
+
+# mandelbrot_chunk: your @njit(cache=True) function from L04/L05
+def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
+                    max_iter=100, n_chunks=32):
+    chunk_size = max(1, N // n_chunks)
+    tasks, row = [], 0
+    while row < N:
+        row_end = min(row + chunk_size, N)
+        tasks.append(delayed(mandelbrot_chunk)(
+            row, row_end, N, x_min, x_max, y_min, y_max, max_iter))
+        row = row_end
+    parts = dask.compute(*tasks)
+    return np.vstack(parts)
 if __name__ == '__main__':
     import time
     import statistics
