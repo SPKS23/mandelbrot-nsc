@@ -102,7 +102,7 @@ if __name__ == '__main__':
         print(f"{n_chunks:4d} chunks  {t_par:.3f}s  {t_serial/t_par:.1f}x  LIF={lif:.2f}")
 
     # Dask local benchmark
-    N, max_iter = 4096, 100
+    N, max_iter = 8192, 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
     client = Client("tcp://10.92.1.228:8786")
     client.run(lambda: mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX,  # warm up all workers
