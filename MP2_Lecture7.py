@@ -70,7 +70,7 @@ def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
 
 if __name__ == '__main__':
     # Serial baseline + chunk-count sweep; one Pool per config to exclude spawn cost
-    N, max_iter = 1024, 100
+    N, max_iter = 8192, 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25  # adjust to your L04 optimum
     n_workers = 12
     
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         print(f"{n_chunks:4d} chunks  {t_par:.3f}s  {t_serial/t_par:.1f}x  LIF={lif:.2f}")
 
     # Dask local benchmark
-    N, max_iter = 8192, 100
+    max_iter = 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
     client = Client("tcp://10.92.1.228:8786")
     client.run(lambda: mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX,  # warm up all workers
