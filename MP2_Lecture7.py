@@ -113,4 +113,5 @@ if __name__ == '__main__':
         result = mandelbrot_dask(N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)
         times.append(time.perf_counter() - t0)
     print(f"Dask local (n_chunks=32): {statistics.median(times):.3f} s")
+    print(client)
     client.close()
