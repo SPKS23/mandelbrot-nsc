@@ -69,49 +69,34 @@ def mandelbrot_dask(N, x_min, x_max, y_min, y_max,
     return np.vstack(parts)
 
 if __name__ == '__main__':
-    # Serial baseline + chunk-count sweep; one Pool per config to exclude spawn cost
-    N, max_iter = 1024, 100
-    X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25  # adjust to your L04 optimum
-    n_workers = 12
-    
-    mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)  # warm up JIT
-    
-    # Serial baseline
-    times = []
-    for _ in range(3):
-        t0 = time.perf_counter()
-        mandelbrot_chunk(0, N, N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)
-        times.append(time.perf_counter() - t0)
-    t_serial = statistics.median(times)
-    print(f"Serial: {t_serial:.3f}s")
-    
-    # Chunk-count sweep (M2): one Pool per config
-    tiny = [(0, 8, 8, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)]
-    for mult in [1, 2, 4, 8, 16]:
-        n_chunks = mult * n_workers
-        with Pool(processes=n_workers) as pool:
-            pool.map(_worker, tiny)  # warm-up: load JIT cache in workers
-            times = []
-            for _ in range(3):
-                t0 = time.perf_counter()
-                mandelbrot_parallel(N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter,
-                                  n_workers=n_workers, n_chunks=n_chunks, pool=pool)
-                times.append(time.perf_counter() - t0)
-        t_par = statistics.median(times)
-        lif = n_workers * t_par / t_serial - 1
-        print(f"{n_chunks:4d} chunks  {t_par:.3f}s  {t_serial/t_par:.1f}x  LIF={lif:.2f}")
-
-    # Dask local benchmark
-    N, max_iter = 1024, 100
+    # Dask local benchmark with chunk size sweep across multiple resolutions
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
-    cluster = LocalCluster(n_workers=8, threads_per_worker=1)
+    max_iter = 100
+    chunk_sizes = [4, 8, 16, 32, 64, 128]
+    resolutions = [512, 2048, 8192]  # Small, medium, large
+    
+    cluster = LocalCluster(n_workers=11, threads_per_worker=1)
     client = Client(cluster)
     client.run(lambda: mandelbrot_chunk(0, 8, 8, X_MIN, X_MAX,  # warm up all workers
                                        Y_MIN, Y_MAX, 10))
-    times = []
-    for _ in range(3):
-        t0 = time.perf_counter()
-        result = mandelbrot_dask(N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter)
-        times.append(time.perf_counter() - t0)
-    print(f"Dask local (n_chunks=32): {statistics.median(times):.3f} s")
-    client.close(); cluster.close()
+    
+    print("Resolution sweep: Scheduling overhead at small N vs performance at large N\n")
+    
+    for N in resolutions:
+        print(f"\n{'='*60}")
+        print(f"N = {N}x{N} ({N*N:,} pixels)")
+        print(f"{'='*60}")
+        
+        for n_chunks in chunk_sizes:
+            times = []
+            for _ in range(3):
+                t0 = time.perf_counter()
+                result = mandelbrot_dask(N, X_MIN, X_MAX, Y_MIN, Y_MAX, max_iter, n_chunks=n_chunks)
+                times.append(time.perf_counter() - t0)
+            median_time = statistics.median(times)
+            overhead_pct = ((n_chunks - 1) / 11) * 100  # Rough estimate: extra tasks beyond workers
+            print(f"  n_chunks={n_chunks:3d} | {median_time:7.3f} s  | overhead~{overhead_pct:5.1f}%")
+        
+ 
+    client.close()
+    cluster.close()

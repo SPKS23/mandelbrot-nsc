@@ -59,7 +59,7 @@ if __name__ == '__main__':
     fig.savefig(out, dpi=150)
     print(f'Saved: {out}')    
     # --- MP2 M3: benchmark (in __main__ block) ---
-    N, MAX_ITER = 1024, 100
+    N, MAX_ITER = 8192, 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25
     
     # Serial baseline (Numba already warm after M1 warm-up)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         mandelbrot_serial(N, X_MIN, X_MAX, Y_MIN, Y_MAX, MAX_ITER)
         times.append(time.perf_counter() - t0)
     t_serial = statistics.median(times)
-    
+    print(f"Serial: {t_serial:.3f}s (min={min(times):.3f}, max={max(times):.3f})")
     for n_workers in range(1, os.cpu_count() + 1):
         chunk_size = max(1, N // n_workers)
         chunks, row = [], 0
