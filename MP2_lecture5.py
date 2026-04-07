@@ -54,7 +54,7 @@ def mandelbrot_parallel(N, x_min, x_max, y_min, y_max,
 
 if __name__ == '__main__':
     # Serial baseline + chunk-count sweep; one Pool per config to exclude spawn cost
-    N, max_iter = 1024, 100
+    N, max_iter = 8192, 100
     X_MIN, X_MAX, Y_MIN, Y_MAX = -2.5, 1.0, -1.25, 1.25  # adjust to your L04 optimum
     n_workers = 11
     
