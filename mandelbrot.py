@@ -71,6 +71,57 @@ def mandelbrot_point(c: complex, max_iter: int) -> int:
     return max_iter
 
 
+def mandelbrot_set(
+    xmin: float,
+    xmax: float,
+    ymin: float,
+    ymax: float,
+    width: int,
+    height: int,
+    max_iter: int = 100,
+) -> np.ndarray:
+    """Compute iteration count grid using scalar mandelbrot_point calls.
+
+    Generates a 2D grid of complex parameters and computes escape iteration
+    counts by calling mandelbrot_point for each pixel. Demonstrates nested
+    function calls as reference implementation.
+
+    Parameters
+    ----------
+    xmin : float
+        Minimum real coordinate.
+    xmax : float
+        Maximum real coordinate.
+    ymin : float
+        Minimum imaginary coordinate.
+    ymax : float
+        Maximum imaginary coordinate.
+    width : int
+        Number of pixels in real direction.
+    height : int
+        Number of pixels in imaginary direction.
+    max_iter : int, optional
+        Maximum iterations per point (default: 100).
+
+    Returns
+    -------
+    np.ndarray
+        2D array of shape (height, width) with dtype int, containing
+        iteration counts for each point. Computed via nested calls to
+        mandelbrot_point.
+    """
+    x = np.linspace(xmin, xmax, width)
+    y = np.linspace(ymin, ymax, height)
+
+    result = np.zeros((height, width), dtype=int)
+    for j, yi in enumerate(y):
+        for i, xi in enumerate(x):
+            c = complex(xi, yi)
+            result[j, i] = mandelbrot_point(c, max_iter)
+
+    return result
+
+
 def mandelbrot_set_numpy(
     xmin: float,
     xmax: float,
